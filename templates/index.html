@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Malaria Positivity Rate Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 40px;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 3px solid black;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* Rainbow colors for each input using safe IDs */
+        #STOMACH_ACHE { background-color: #FF0000; }         /* Red */
+        #FEVER { background-color: #FF7F00; }               /* Orange */
+        #HEAD_ACHE { background-color: #FFFF00; }           /* Yellow */
+        #NAUSEA_VOMITING { background-color: #00FF00; }     /* Green */
+        #MALAISE { background-color: #0000FF; }             /* Blue */
+        #DIARRHOEA { background-color: #4B0082; }           /* Indigo */
+        #WEEKLY_TEMPERATURE { background-color: #8B00FF; }  /* Violet */
+        #WEEKLY_HUMIDITY { background-color: #00FFFF; }     /* Cyan */
+        #WEEKLY_RAINFALL { background-color: #FFC0CB; }     /* Pink */
+
+        button {
+            grid-column: 1 / -1;
+            padding: 12px 25px;
+            font-size: 18px;
+            background-color: #333;
+            color: white;
+            border: 2px solid black;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        .result {
+            margin-top: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <h1>Malaria Positivity Rate Prediction</h1>
+    <form action="/predict" method="post">
+        {% for col in predictors %}
+            {% set safe_id = col.replace(" ", "_").replace("/", "_") %}
+            <div class="input-group">
+                <label>{{ col }}:</label>
+                <input type="text" id="{{ safe_id }}" name="{{ col }}" required>
+            </div>
+        {% endfor %}
+
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+        <div class="result">
+            Predicted Positivity Rate: {{ prediction }}
+        </div>
+    {% endif %}
+</body>
+</html>
