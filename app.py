@@ -1,50 +1,70 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import joblib
+from scipy.special import expit
 
-# Initialize Flask app
+# =========================
+# 1. Initialize Flask
+# =========================
 app = Flask(__name__)
 
-# Load saved ARIMAX model
+# =========================
+# 2. Load Model & Scaler
+# =========================
 arimax_model = joblib.load("arimax_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
-# Load scaler if needed for preprocessing
-# scaler = joblib.load("scaler.pkl")  # optional if scaling ML inputs
-
-# Define the predictors
+# =========================
+# 3. Define Predictors (must match training)
+# =========================
 predictor_cols = [
     "STOMACH ACHE", "FEVER", "HEAD ACHE", "NAUSEA/VOMITING",
-    "DIARRHOEA", "MALAISE", "WEEKLY TEMPERATURE",
-    "WEEKLY HUMIDITY", "WEEKLY RAINFALL"
+    "MALAISE", "DIARRHOEA", "WEEKLY TEMPERATURE",
+    "WEEKLY RAINFALL", "WEEKLY HUMIDITY"
 ]
 
 
-# Route for home page (input form)
+# =========================
+# 4. Home Page
+# =========================
 @app.route('/')
 def home():
     return render_template('index.html', predictors=predictor_cols)
 
 
-# Route to handle prediction
+# =========================
+# 5. Prediction Route
+# =========================
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Read values from form
+        # Read input from form in the same order as predictor_cols
         input_data = [float(request.form[col]) for col in predictor_cols]
+
+        # Convert to DataFrame
         exog_df = pd.DataFrame([input_data], columns=predictor_cols)
 
-        # Predict using ARIMAX
-        pred = arimax_model.predict(start=0, end=0, exog=exog_df)
-        result = round(pred.iloc[0], 2)
+        # Scale using saved scaler
+        exog_scaled = scaler.transform(exog_df)
+
+        # Single-step forecast
+        forecast_logit = arimax_model.get_forecast(steps=1, exog=exog_scaled).predicted_mean
+        forecast = expit(forecast_logit)  # ensures prediction is between 0 and 1
+
+        # Round & convert to percentage
+        result = round(forecast.iloc[0] * 100, 2)
+
         return render_template('index.html', predictors=predictor_cols, prediction=result)
 
     except Exception as e:
         return f"Error in prediction: {e}"
 
 
+# =========================
+# 6. Run App
+# =========================
 import os
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Render's port or default to 5000 locally
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
-
